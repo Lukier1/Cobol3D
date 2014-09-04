@@ -4,6 +4,8 @@
 
 #include <string>
 
+
+#define _CRT_NONSTDC_NO_WARNINGS
 namespace Cobol {
 	GraphicClass::GraphicClass() : beginTime( std::clock()) {
 		mFrameCB=0;
@@ -22,78 +24,62 @@ namespace Cobol {
 		mText = 0;
 	};
 
-	int GraphicClass::InitBuffer() {
-		HRESULT result;
-		
+	/*Funkcja zajmujaca sie tworzenie jednego buforu*/
+	int GraphicClass::CreateBuffer(ID3D11Buffer * &buffer, UINT size, bool dynamic)
+	{
 		D3D11_BUFFER_DESC constDesc;
-	
-		ZeroMemory( &constDesc, sizeof( constDesc ) );
-		constDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		constDesc.ByteWidth = sizeof( VSPerFrameCB );
-		constDesc.Usage = D3D11_USAGE_DYNAMIC;
-		constDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		HRESULT result;
 
-		result  =  mDevice->getDevice()->CreateBuffer( &constDesc, 0, &mFrameCB);
-		if(FAILED(result))
+		ZeroMemory(&constDesc, sizeof(constDesc));
+		constDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		constDesc.ByteWidth = size;
+		constDesc.Usage = dynamic ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT ;
+		constDesc.CPUAccessFlags = dynamic ? D3D11_CPU_ACCESS_WRITE : 0;
+
+		result = mDevice->getDevice()->CreateBuffer(&constDesc, 0, &buffer);
+		if (FAILED(result))
 		{
-			LOG_MSGERR("Problem with creating constant buffer.")
+			LOG_MSGERR("Problem with creating buffer.")
 			return false;
 		}
-			
-		ZeroMemory( &constDesc, sizeof( constDesc ) );
-		constDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		constDesc.ByteWidth = sizeof(  VSPerSkinedCB  );
-		constDesc.Usage =  D3D11_USAGE_DEFAULT;
-		constDesc.CPUAccessFlags = 0;
-
-		result  =  mDevice->getDevice()->CreateBuffer( &constDesc, 0, &mSkinCB);
-		if(FAILED(result))
-		{
-			LOG_MSGERR("Problem with creating constant buffer.")
-			return false;
-		}
-	
-		ZeroMemory( &constDesc, sizeof( constDesc ) );
-		constDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		constDesc.ByteWidth = sizeof(  VSPerStaticCB );
-		constDesc.Usage =  D3D11_USAGE_DYNAMIC;
-		constDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-		result  =  mDevice->getDevice()->CreateBuffer( &constDesc, 0, &mStatCB);
-		if(FAILED(result))
-		{
-			LOG_MSGERR("Problem with creating constant buffer.")
-			return false;
-		}
-		
-		ZeroMemory( &constDesc, sizeof( constDesc ) );
-		constDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		constDesc.ByteWidth = sizeof(  VSPerPassCB  );
-		constDesc.Usage = D3D11_USAGE_DYNAMIC;
-		constDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-		result  =  mDevice->getDevice()->CreateBuffer( &constDesc, 0, &mPassCB);
-		if(FAILED(result))
-		{
-			LOG_MSGERR("Problem with creating constant buffer.")
-			return false;
-		}
-		
-		ZeroMemory( &constDesc, sizeof( constDesc ) );
-		constDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		constDesc.ByteWidth = sizeof(  VSPerMaterialCB  );
-		constDesc.Usage =  D3D11_USAGE_DYNAMIC;
-		constDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-		result  =  mDevice->getDevice()->CreateBuffer( &constDesc, 0, &mMaterCB);
-		if(FAILED(result))
-		{
-			LOG_MSGERR("Problem with creating constant buffer.")
-			return false;
-		}
-
 		return true;
 	}
+
+	/*Inicjalizacja wszystkich buforów*/
+	int GraphicClass::InitBuffer() {
+		if (!CreateBuffer(mFrameCB, sizeof(VSPerFrameCB), true))
+			return false;
+		if (!CreateBuffer(mSkinCB, sizeof(VSPerSkinedCB), true))
+			return false;
+		if (!CreateBuffer(mStatCB, sizeof(VSPerStaticCB), true))
+			return false;
+		if (!CreateBuffer(mPassCB, sizeof(VSPerPassCB), true))
+			return false;
+		if (!CreateBuffer(mMaterCB, sizeof(VSPerMaterialCB), true))
+			return false;
+		return true;
+	}
+	/* Aktulizacja sta³ego bufora o warstoœci przekazane przez wskaŸnik data_new */
+	void GraphicClass::UpdateBuffer(ID3D11Buffer * &buffer, int num_reg, void * data_new, int size) {
+		if (data_new == NULL || buffer == NULL)
+		{
+			BOTHMSG("Null pointer error in update buffer")
+		}
+		ID3D11DeviceContext * devCon = mDevice->getContext();
+		D3D11_MAPPED_SUBRESOURCE mappedResource;
+
+		void* dataPtr;
+		devCon->Map(buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		// Get a pointer to the data in the constant buffer.
+		dataPtr = mappedResource.pData;
+		// Copy the matrices into the constant buffer.
+		memcpy(dataPtr, data_new, size);
+		// Unlock the constant buffer.
+		//Jon
+		devCon->Unmap(buffer, 0);
+		devCon->VSSetConstantBuffers(num_reg, 1, &buffer);
+	}
+
 	void GraphicClass::Frame(InputData &input)
 	{
 		
@@ -113,10 +99,10 @@ namespace Cobol {
 			{
 				rotation -= 2*XM_PI;
 			}
-			 XMMATRIX mSpin = XMMatrixRotationZ( rotation);
+			XMMATRIX mSpin = XMMatrixRotationZ( rotation);
 			XMMATRIX mOrbit = XMMatrixRotationY(rotation  );
 			XMMATRIX mTranslate = XMMatrixTranslation( -0.0f, 0.0f, -1.0f );
-			 XMMATRIX mScale = XMMatrixScaling( 0.8f, 0.8f, 0.8f );
+			XMMATRIX mScale = XMMatrixScaling( 0.8f, 0.8f, 0.8f );
 
 
 			 worldMatrix = mScale * mSpin * mTranslate *mOrbit;
@@ -129,109 +115,70 @@ namespace Cobol {
 			TransposeMatrix(viewMatrix); 
 			TransposeMatrix(projectionMatrix);
 			TransposeMatrix(orthoMatrix);
-
-			D3D11_MAPPED_SUBRESOURCE mappedResource;
 			
-			
+			//Ustawianie buforów do renderowania 3D
 			{
-				VSPerFrameCB * dataPtr;
-				devCon->Map( mFrameCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-				// Get a pointer to the data in the constant buffer.
-				dataPtr = (VSPerFrameCB*)mappedResource.pData;
-				// Copy the matrices into the constant buffer.
-				dataPtr->appTime = (float)( std::clock()-beginTime);
-				dataPtr->projMatrix= projectionMatrix;
-				// Unlock the constant buffer.
-				devCon->Unmap( mFrameCB, 0);
-				devCon->VSSetConstantBuffers(0,1,&mFrameCB);
+				VSPerFrameCB data;
+				data.appTime = (float)( std::clock()-beginTime);
+				data.projMatrix= projectionMatrix;
+
+				UpdateBuffer(mFrameCB, 0, &data, sizeof(data));
 			}
 			devCon->VSSetConstantBuffers(1,1,&mSkinCB);
 			{
-				VSPerStaticCB * dataPtr;
-				devCon->Map( mStatCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-				// Get a pointer to the data in the constant buffer.
-				dataPtr = (VSPerStaticCB*)mappedResource.pData;
-				// Copy the matrices into the constant buffer.
-				dataPtr->worldMatrix = worldMatrix;
-				// Unlock the constant buffer.
-				devCon->Unmap( mStatCB, 0);
-				devCon->VSSetConstantBuffers(2,1, &mStatCB);
+				VSPerStaticCB  data;
+				data.worldMatrix = worldMatrix;
+			
+				UpdateBuffer(mStatCB, 2, &data, sizeof(data));
 			}
-
+			
 			{
-				VSPerPassCB * dataPtr;
-				devCon->Map(  mPassCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-				// Get a pointer to the data in the constant buffer.
-				dataPtr = (VSPerPassCB*)mappedResource.pData;
-				// Copy the matrices into the constant buffer.
-				dataPtr->viewMatrix = viewMatrix;
-				dataPtr->cameraPosition = mCamera->GetPosition();
-				dataPtr->padding = 0.0f;
-				// Unlock the constant buffer.
-				devCon->Unmap( mPassCB, 0);
+				VSPerPassCB  data;
+				data.viewMatrix = viewMatrix;
+				data.cameraPosition = mCamera->GetPosition();
+				data.padding = 0.0f;
 				
-				devCon->VSSetConstantBuffers(3,1, &mPassCB);
+				UpdateBuffer(mPassCB, 3, &data, sizeof(data));
 			}
 		
 
 			devCon->VSSetConstantBuffers(4,1, &mMaterCB);
-			
-			//#############################################################33
+
+			//############################################################# Poczatek Sceny
 			mDevice->BeginScene(0.0f,0,0.2f,1.0f);
 			
-			// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
-			//mModel->Render(mDevice->getContext());
+			
 
 			// Render the model using the color shader.
-			//mTextureShader->Render(mDevice->getContext(), mModel->GetIndexCount(),mModel->getTexture());
-			//mLightShader->Render(mDevice->getContext(), mModel->GetIndexCount(),mModel->getTexture(), 
-			//	mLight->GetDirection(),mLight->GetDiffuseColor(),mLight->GettAmbientColor(),mLight->GetSpecularColor(),mLight->GetSpecularPower());
 			mModel2->Render(mDevice->getContext());
 			mLightShader->Render(mDevice->getContext(), mModel2->GetIndexCount(),mModel->getTexture(), 
 				mLight->GetDirection(),mLight->GetDiffuseColor(),mLight->GettAmbientColor(),mLight->GetSpecularColor(),mLight->GetSpecularPower());
 		
 			mCamera->Render();
-				//Chaning on ortho matrix
+
+			//Changing on ortho matrix
 			{
-				VSPerFrameCB * dataPtr;
-				devCon->Map( mFrameCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-				// Get a pointer to the data in the constant buffer.
-				dataPtr = (VSPerFrameCB*)mappedResource.pData;
-				// Copy the matrices into the constant buffer.
-				dataPtr->appTime = (float)( std::clock()-beginTime);
-				dataPtr->projMatrix= orthoMatrix;
-				// Unlock the constant buffer.
-				devCon->Unmap( mFrameCB, 0);
-				devCon->VSSetConstantBuffers(0,1,&mFrameCB);
+				VSPerFrameCB data;
+				data.appTime = (float)( std::clock()-beginTime);
+				data.projMatrix= orthoMatrix;
+				UpdateBuffer(mFrameCB, 0, &data, sizeof(data));
 			}
 			devCon->VSSetConstantBuffers(1,1,&mSkinCB);
 			{
-				VSPerStaticCB * dataPtr;
-				devCon->Map( mStatCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-				// Get a pointer to the data in the constant buffer.
-				dataPtr = (VSPerStaticCB*)mappedResource.pData;
-				// Copy the matrices into the constant buffer.
+				VSPerStaticCB data;
 				XMMATRIX mWorld2 = XMMatrixRotationX(input.appTime);
 				TransposeMatrix(mWorld2);
-				dataPtr->worldMatrix = XMMatrixIdentity();
-				// Unlock the constant buffer.
-				devCon->Unmap( mStatCB, 0);
-				devCon->VSSetConstantBuffers(2,1, &mStatCB);
-			}
+				data.worldMatrix = XMMatrixIdentity();
+				UpdateBuffer(mStatCB, 2, &data, sizeof(data));
+			} 
 			{
-				VSPerPassCB * dataPtr;
-				devCon->Map(  mPassCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-				// Get a pointer to the data in the constant buffer.
-				dataPtr = (VSPerPassCB*)mappedResource.pData;
-				// Copy the matrices into the constant buffer.
-				dataPtr->viewMatrix =  XMMatrixIdentity();
-				dataPtr->cameraPosition = mCamera->GetPosition();
-				dataPtr->padding = 0.0f;
-				// Unlock the constant buffer.
-				devCon->Unmap( mPassCB, 0);
-				
-				devCon->VSSetConstantBuffers(3,1, &mPassCB);
+				VSPerPassCB data;
+				data.viewMatrix = XMMatrixIdentity();
+				data.cameraPosition = mCamera->GetPosition();
+				data.padding = 0.0f;
+				UpdateBuffer(mPassCB, 3, &data, sizeof(data));
 			}
+
 			mDevice->SetBufferZ(false);
 			static float ooo = 0;
 			ooo+=10.1f;
@@ -368,7 +315,12 @@ namespace Cobol {
 		mLight->SetAmbientColor(XMFLOAT4(0.2f,0.2f,0.2f,0.0f));
 		mLight->SetSpecularColor(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 		mLight->SetSpecularPower(32.0f);
-		InitBuffer();
+		if(!InitBuffer())
+		if (!mLightShader->Init(mDevice->getDevice(), hwnd))
+		{
+			BOTHMSG("Problem with init buffers");
+			return false;
+		}
 
 		return true;
 	}

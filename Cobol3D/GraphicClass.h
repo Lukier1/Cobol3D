@@ -63,6 +63,9 @@ namespace Cobol {
 		void PrepareBuffers();
 		int InitBuffer();
 		const clock_t beginTime;
+		
+		void UpdateBuffer(ID3D11Buffer * &buffer, int num_reg, void * data, int size);
+		int CreateBuffer(ID3D11Buffer * &buffer, UINT size, bool dynamic);
 	public:
 		
 

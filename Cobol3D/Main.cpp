@@ -9,7 +9,7 @@ int WINAPI wWinMain(HINSTANCE hInstance,  HINSTANCE prevInstance, LPWSTR cmdLine
 	Cobol::SystemClass system;
 	if(system.Init())
 	{
-		system.Run();
+		system.Run(); 
 	}
 	else
 		MessageBox(NULL,"Error", "!!!!", MB_OK);
