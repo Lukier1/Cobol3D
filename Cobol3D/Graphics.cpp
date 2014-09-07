@@ -82,7 +82,7 @@ namespace Cobol {
 
 	void GraphicClass::Frame(InputData &input)
 	{
-		
+		static bool frustum = true;
 		if(mDevice)
 		{
 			ID3D11DeviceContext * devCon = mDevice->getContext();
@@ -111,10 +111,14 @@ namespace Cobol {
 			mCamera->getMatrix(viewMatrix);
 			mDevice->GetProjectionMatrix(projectionMatrix);
 			mDevice->GetOrthoMatrix(orthoMatrix);
+			mFrustum->ConstructFrustum(1000.0f, projectionMatrix, viewMatrix);
+		
+
 			TransposeMatrix(worldMatrix);
 			TransposeMatrix(viewMatrix); 
 			TransposeMatrix(projectionMatrix);
 			TransposeMatrix(orthoMatrix);
+			
 			
 			//Ustawianie buforów do renderowania 3D
 			{
@@ -147,13 +151,33 @@ namespace Cobol {
 			//############################################################# Poczatek Sceny
 			mDevice->BeginScene(0.0f,0,0.2f,1.0f);
 			
-			
-
+			int renderCount = 0; 
+			for (int i = 0; i < mModelList->GetModelCount(); ++i) {
 			// Render the model using the color shader.
-			mModel2->Render(mDevice->getContext());
-			mLightShader->Render(mDevice->getContext(), mModel2->GetIndexCount(),mModel->getTexture(), 
-				mLight->GetDirection(),mLight->GetDiffuseColor(),mLight->GettAmbientColor(),mLight->GetSpecularColor(),mLight->GetSpecularPower());
-		
+				XMFLOAT4 color; 
+				XMFLOAT3 pos;
+				mModelList->GetDate(i, pos, color);
+				
+				if (!frustum && !mFrustum->CheckSphere(pos.x, pos.y, pos.z, 2.0f))
+					continue;
+				++renderCount;
+				TransposeMatrix(worldMatrix);
+				worldMatrix*=XMMatrixTranslation(pos.x, pos.y, pos.z);
+				TransposeMatrix(worldMatrix);
+				devCon->VSSetConstantBuffers(1, 1, &mSkinCB);
+				{
+					VSPerStaticCB  data;
+					data.worldMatrix = worldMatrix;
+
+					UpdateBuffer(mStatCB, 2, &data, sizeof(data));
+				}
+
+				mModel2->Render(mDevice->getContext());
+				mLightShader->Render(mDevice->getContext(), mModel2->GetIndexCount(),mModel->getTexture(), 
+					mLight->GetDirection(),color,mLight->GettAmbientColor(),mLight->GetSpecularColor(),mLight->GetSpecularPower());
+				worldMatrix = mScale * mSpin * mTranslate *mOrbit;
+				TransposeMatrix(worldMatrix);
+			}
 			mCamera->Render();
 
 			//Changing on ortho matrix
@@ -180,10 +204,9 @@ namespace Cobol {
 			}
 
 			mDevice->SetBufferZ(false);
-			static float ooo = 0;
-			ooo+=10.1f;
+		
 			mText->Render(devCon);
-			mBitmap->Render(devCon,ooo,ooo);
+			mBitmap->Render(devCon,0.0f,0.0f);
 			mTextureShader->Render(devCon,mBitmap->GetIndexCount(), mBitmap->getTexture());
 			
 			mDevice->SetBufferZ(true);
@@ -204,12 +227,20 @@ namespace Cobol {
 						nowy+=input.litera;
 						
 					}
-					
-				}
-				
+					if (input.litera == 'f')
+						frustum = !frustum;
+			}
+			if (input.IX != 0 || input.IY != 0)
+			{
+				static float rotY = 0.0f, rotZ  = 0.0f;
+				rotY += (float)(-input.IX)/12;
+				rotZ += (float)(-input.IY) / 12;
+				mCamera->SetRotation(XMFLOAT3(0, rotY, 0.0f));
+
+			}
 			
 			
-			wyjscie+=toString(input.MouseX)+" MouseY: "+toString(input.MouseY)+nowy;
+			wyjscie+=toString(input.MouseX)+" MouseY: "+toString(input.MouseY)+" Render count: "+toString(renderCount);
 			mText->UpdateText(wyjscie.c_str(),devCon);
 
 			//mCamera->SetRotation(XMFLOAT3(0.0f,0.0f,input.appTime*0.001f));
@@ -249,7 +280,7 @@ namespace Cobol {
 			BOTHMSG("Problem with creating GraphicClass::mModel")
 			return false;
 		}
-		if(!mModel->Init(mDevice->getDevice(),"data/Texture1.dds",L"data/chata.cobM"))
+		if(!mModel->Init(mDevice->getDevice(),"data/Texture1.dds",L"data/import.cobM"))
 		{
 			BOTHMSG("Problem with init mModel")
 			return false;
@@ -261,7 +292,7 @@ namespace Cobol {
 			BOTHMSG("Problem with creating GraphicClass::mModel")
 			return false;
 		}
-		if(!mModel2->Init(mDevice->getDevice(),"data/Texture1.dds",L"data/chata.cobM"))
+		if(!mModel2->Init(mDevice->getDevice(),"data/Texture1.dds",L"data/import2.cobM"))
 		{
 			BOTHMSG("Problem with init mModel")
 			return false;
@@ -283,7 +314,7 @@ namespace Cobol {
 			BOTHMSG("Problem with creating GraphicClass::mBitmap")
 			return false;
 		}
-		if(!mBitmap->Init(mDevice->getDevice(),"data/Tex1.gif",L"",XMFLOAT2(screenH,screenW),XMFLOAT2(256,256)))
+		if(!mBitmap->Init(mDevice->getDevice(),"data/Texture1.dds",L"",XMFLOAT2(screenH,screenW),XMFLOAT2(256,256)))
 		{
 			BOTHMSG("Problem with init GraphicClass::mBitmap")
 			return false;
@@ -306,7 +337,12 @@ namespace Cobol {
 			BOTHMSG("Problem with init mText");
 			return false;
 		}
-		
+		mModelList = new ModelListClass();
+		if (!mModelList->Init(50)) {
+			BOTHMSG("Problem with init mModelList");
+			return false;
+		}
+		mFrustum = new FrustumClass();
 		
 		
 		mLight = new LightClass();
@@ -378,7 +414,12 @@ namespace Cobol {
 			delete mDevice;
 			mDevice = 0;
 		}
-		
+		delete mFrustum;
+		mFrustum = 0;
+
+		delete mModelList;
+		mModelList = 0;
+
 		return true;
 	}
 	GraphicClass::~GraphicClass() {

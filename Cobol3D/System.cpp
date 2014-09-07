@@ -105,7 +105,7 @@ namespace Cobol {
 		mInput->GetMousePosition(inp.MouseX, inp.MouseY);
 		inp.appTime = std::clock();
 		inp.litera = mInput->getLetter();
-
+		inp.IX = mInput->lX; inp.IY = mInput->lY;
 		mGraphic->Frame(inp); // Cos z czasem zrobic
 		if(!mInput->Frame())
 			return false;

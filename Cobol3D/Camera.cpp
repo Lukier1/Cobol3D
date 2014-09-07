@@ -16,7 +16,7 @@ namespace Cobol {
 		newRot.x*=(float)((2*3.14/180));
 		newRot.y*=(float)((2*3.14/180));
 		newRot.z*=(float)((2*3.14/180));
-		rotationMatrix = XMMatrixRotationRollPitchYaw(newRot.x,newRot.y, newRot.z);
+		
 		//XMVector3TransformCoord( XMLoadFloat3(&mLookAt), rotationMatrix);
 		//XMVector3TransformCoord( XMLoadFloat3(&mUp), rotationMatrix);
 
@@ -24,7 +24,8 @@ namespace Cobol {
 		lookAt.y+=mPosition.y; 
 		lookAt.z+=mPosition.z; 
 
-		rotationMatrix *= XMMatrixLookAtLH(XMLoadFloat3(&mPosition),XMLoadFloat3(&lookAt), XMLoadFloat3(&mUp));
+		rotationMatrix = XMMatrixLookAtLH(XMLoadFloat3(&mPosition),XMLoadFloat3(&lookAt), XMLoadFloat3(&mUp));
+		rotationMatrix *= XMMatrixRotationRollPitchYaw(newRot.x, newRot.y, newRot.z);
 		mViewMatrix = rotationMatrix;
 	}
 };

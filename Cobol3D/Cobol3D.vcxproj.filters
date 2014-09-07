@@ -94,6 +94,12 @@
     <ClCompile Include="SoundClass.cpp">
       <Filter>Source Files\NewVer</Filter>
     </ClCompile>
+    <ClCompile Include="FrustumClass.cpp">
+      <Filter>Source Files\NewVer\Graphic</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelClassList.cpp">
+      <Filter>Source Files\NewVer\Graphic</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="InputClass.h">
@@ -152,6 +158,12 @@
     </ClInclude>
     <ClInclude Include="SoundClass.h">
       <Filter>Header Files\NewVer</Filter>
+    </ClInclude>
+    <ClInclude Include="FrustumClass.h">
+      <Filter>Header Files\NewVer\Graphic</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelListClass.h">
+      <Filter>Header Files\NewVer\Graphic</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

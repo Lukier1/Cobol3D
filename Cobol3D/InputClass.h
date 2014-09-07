@@ -46,7 +46,8 @@ namespace Cobol {
 
 		int mScreenW, mScreenH;
 		int mMouseX, mMouseY;
-		
+		int lX, lY;
+
 		long mLastHit;
 		short mLastKey;
 	};

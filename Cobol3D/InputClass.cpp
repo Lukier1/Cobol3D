@@ -40,6 +40,8 @@ namespace Cobol {
 		mLastKey = 0;
 		mMouseX = 0;
 		mMouseY = 0;
+		lX = 0; 
+		lY = 0;
 	}
 
 	InputClass::~InputClass()
@@ -221,7 +223,8 @@ namespace Cobol {
 	void InputClass::ProcessInput() {
 		mMouseX += mMouseState.lX; 
 		mMouseY += mMouseState.lY;
-		
+		lX = mMouseState.lX;
+		lY = mMouseState.lY;
 		//if(mMouseX<0)
 			//mMouseX = 0;
 		////if(mMouseY<0)

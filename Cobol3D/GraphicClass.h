@@ -19,6 +19,8 @@
 #include "LightShaderClass.h"
 #include "BitmapClass.h"
 #include "TextClass.h"
+#include "ModelListClass.h"
+#include "FrustumClass.h"
 
 namespace Cobol {
 	struct InputData {
@@ -30,7 +32,6 @@ namespace Cobol {
 	class GraphicClass {
 	private:
 		struct VSPerFrameCB { // register 0
-			
 			XMMATRIX projMatrix;
 			float appTime;
 		};
@@ -51,6 +52,8 @@ namespace Cobol {
 
 		
 		ID3D11Buffer * mFrameCB, * mSkinCB, * mStatCB, * mPassCB, * mMaterCB;
+		ModelListClass * mModelList;
+		FrustumClass * mFrustum;
 
 		Device * mDevice;
 		Camera * mCamera;

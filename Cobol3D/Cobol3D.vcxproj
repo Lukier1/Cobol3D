@@ -81,6 +81,8 @@
   <ItemGroup>
     <ClCompile Include="FontClass.cpp" />
     <ClCompile Include="FontShaderClass.cpp" />
+    <ClCompile Include="FrustumClass.cpp" />
+    <ClCompile Include="ModelClassList.cpp" />
     <ClCompile Include="SoundClass.cpp" />
     <ClCompile Include="TextClass.cpp" />
     <ClCompile Include="BitmapClass.cpp" />
@@ -106,12 +108,14 @@
     <ClInclude Include="Device.h" />
     <ClInclude Include="FontClass.h" />
     <ClInclude Include="FontShaderClass.h" />
+    <ClInclude Include="FrustumClass.h" />
     <ClInclude Include="GraphicClass.h" />
     <ClInclude Include="InputClass.h" />
     <ClInclude Include="LightClass.h" />
     <ClInclude Include="LightShaderClass.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="ModelClass.h" />
+    <ClInclude Include="ModelListClass.h" />
     <ClInclude Include="MyMath.h" />
     <ClInclude Include="Singleton.h" />
     <ClInclude Include="SoundClass.h" />
