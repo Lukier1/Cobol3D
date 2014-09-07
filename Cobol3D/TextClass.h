@@ -42,7 +42,7 @@ namespace Cobol {
 		FontClass* mFont;
 		FontShaderClass* mFontShader;
 		int mScreenWidth, mScreenHeight;
-		XMMATRIX mBaseViewMatrix;
+	//	XMMATRIX * mBaseViewMatrix;
 
 
 		SentenceType* mSentence1;

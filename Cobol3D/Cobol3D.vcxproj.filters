@@ -100,6 +100,9 @@
     <ClCompile Include="ModelClassList.cpp">
       <Filter>Source Files\NewVer\Graphic</Filter>
     </ClCompile>
+    <ClCompile Include="MultiTexShaderClass.cpp">
+      <Filter>Source Files\NewVer\Graphic</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="InputClass.h">
@@ -165,6 +168,9 @@
     <ClInclude Include="ModelListClass.h">
       <Filter>Header Files\NewVer\Graphic</Filter>
     </ClInclude>
+    <ClInclude Include="MulitTexShaderClass.h">
+      <Filter>Header Files\NewVer\Graphic</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="shaders.hlsl">
@@ -182,6 +188,9 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Font.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="MultiTex.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

@@ -22,6 +22,9 @@ namespace Cobol {
 		mLight = 0;
 		mBitmap = 0;
 		mText = 0;
+		mTex = 0;
+		mMask = 0;
+		mMultiTexShader = nullptr;
 	};
 
 	/*Funkcja zajmujaca sie tworzenie jednego buforu*/
@@ -83,86 +86,86 @@ namespace Cobol {
 	void GraphicClass::Frame(InputData &input)
 	{
 		static bool frustum = true;
-		if(mDevice)
+		if (mDevice)
 		{
 			ID3D11DeviceContext * devCon = mDevice->getContext();
-			
+
 			//UPDATING BUFFERS
-			XMMATRIX viewMatrix, worldMatrix = XMMatrixIdentity(), projectionMatrix,orthoMatrix;
+			XMMATRIX viewMatrix, worldMatrix = XMMatrixIdentity(), projectionMatrix, orthoMatrix;
 
 			static float rotation = 0.0f;
 
 
 			// Update the rotation variable each frame.
 			rotation += (float)XM_PI * 0.0008f;
-			if(rotation > 2*XM_PI)
+			if (rotation > 2 * XM_PI)
 			{
-				rotation -= 2*XM_PI;
+				rotation -= 2 * XM_PI;
 			}
-			XMMATRIX mSpin = XMMatrixRotationZ( rotation);
-			XMMATRIX mOrbit = XMMatrixRotationY(rotation  );
-			XMMATRIX mTranslate = XMMatrixTranslation( -0.0f, 0.0f, -1.0f );
-			XMMATRIX mScale = XMMatrixScaling( 0.8f, 0.8f, 0.8f );
+			XMMATRIX mSpin = XMMatrixRotationZ(rotation);
+			XMMATRIX mOrbit = XMMatrixRotationY(rotation);
+			XMMATRIX mTranslate = XMMatrixTranslation(-0.0f, 0.0f, -1.0f);
+			XMMATRIX mScale = XMMatrixScaling(0.8f, 0.8f, 0.8f);
 
 
-			 worldMatrix = mScale * mSpin * mTranslate *mOrbit;
-			
+			worldMatrix = mScale * mSpin * mTranslate *mOrbit;
+
 			// Get the world, view, and projection matrices from the camera and d3d objects.
 			mCamera->getMatrix(viewMatrix);
 			mDevice->GetProjectionMatrix(projectionMatrix);
 			mDevice->GetOrthoMatrix(orthoMatrix);
 			mFrustum->ConstructFrustum(1000.0f, projectionMatrix, viewMatrix);
-		
+
 
 			TransposeMatrix(worldMatrix);
-			TransposeMatrix(viewMatrix); 
+			TransposeMatrix(viewMatrix);
 			TransposeMatrix(projectionMatrix);
 			TransposeMatrix(orthoMatrix);
-			
-			
+
+
 			//Ustawianie buforów do renderowania 3D
 			{
 				VSPerFrameCB data;
-				data.appTime = (float)( std::clock()-beginTime);
-				data.projMatrix= projectionMatrix;
+				data.appTime = (float)(std::clock() - beginTime);
+				data.projMatrix = projectionMatrix;
 
 				UpdateBuffer(mFrameCB, 0, &data, sizeof(data));
 			}
-			devCon->VSSetConstantBuffers(1,1,&mSkinCB);
+			devCon->VSSetConstantBuffers(1, 1, &mSkinCB);
 			{
 				VSPerStaticCB  data;
 				data.worldMatrix = worldMatrix;
-			
+
 				UpdateBuffer(mStatCB, 2, &data, sizeof(data));
 			}
-			
+
 			{
 				VSPerPassCB  data;
 				data.viewMatrix = viewMatrix;
 				data.cameraPosition = mCamera->GetPosition();
 				data.padding = 0.0f;
-				
+
 				UpdateBuffer(mPassCB, 3, &data, sizeof(data));
 			}
-		
 
-			devCon->VSSetConstantBuffers(4,1, &mMaterCB);
+
+			devCon->VSSetConstantBuffers(4, 1, &mMaterCB);
 
 			//############################################################# Poczatek Sceny
-			mDevice->BeginScene(0.0f,0,0.2f,1.0f);
-			
-			int renderCount = 0; 
-			for (int i = 0; i < mModelList->GetModelCount(); ++i) {
-			// Render the model using the color shader.
-				XMFLOAT4 color; 
+			mDevice->BeginScene(0.0f, 0, 0.2f, 1.0f);
+
+			int renderCount = 0;
+			for (int i = 0, modelCount = mModelList->GetModelCount(); i <modelCount; ++i) {
+				// Render the model using the color shader.
+				XMFLOAT4 color;
 				XMFLOAT3 pos;
 				mModelList->GetDate(i, pos, color);
-				
+
 				if (!frustum && !mFrustum->CheckSphere(pos.x, pos.y, pos.z, 2.0f))
 					continue;
 				++renderCount;
 				TransposeMatrix(worldMatrix);
-				worldMatrix*=XMMatrixTranslation(pos.x, pos.y, pos.z);
+				worldMatrix *= XMMatrixTranslation(pos.x, pos.y, pos.z);
 				TransposeMatrix(worldMatrix);
 				devCon->VSSetConstantBuffers(1, 1, &mSkinCB);
 				{
@@ -173,8 +176,8 @@ namespace Cobol {
 				}
 
 				mModel2->Render(mDevice->getContext());
-				mLightShader->Render(mDevice->getContext(), mModel2->GetIndexCount(),mModel->getTexture(), 
-					mLight->GetDirection(),color,mLight->GettAmbientColor(),mLight->GetSpecularColor(),mLight->GetSpecularPower());
+				mLightShader->Render(mDevice->getContext(), mModel2->GetIndexCount(), mModel->getTexture(),
+					mLight->GetDirection(), color, mLight->GettAmbientColor(), mLight->GetSpecularColor(), mLight->GetSpecularPower());
 				worldMatrix = mScale * mSpin * mTranslate *mOrbit;
 				TransposeMatrix(worldMatrix);
 			}
@@ -183,18 +186,18 @@ namespace Cobol {
 			//Changing on ortho matrix
 			{
 				VSPerFrameCB data;
-				data.appTime = (float)( std::clock()-beginTime);
-				data.projMatrix= orthoMatrix;
+				data.appTime = (float)(std::clock() - beginTime);
+				data.projMatrix = orthoMatrix;
 				UpdateBuffer(mFrameCB, 0, &data, sizeof(data));
 			}
-			devCon->VSSetConstantBuffers(1,1,&mSkinCB);
+			devCon->VSSetConstantBuffers(1, 1, &mSkinCB);
 			{
 				VSPerStaticCB data;
 				XMMATRIX mWorld2 = XMMatrixRotationX(input.appTime);
 				TransposeMatrix(mWorld2);
 				data.worldMatrix = XMMatrixIdentity();
 				UpdateBuffer(mStatCB, 2, &data, sizeof(data));
-			} 
+			}
 			{
 				VSPerPassCB data;
 				data.viewMatrix = XMMatrixIdentity();
@@ -204,10 +207,11 @@ namespace Cobol {
 			}
 
 			mDevice->SetBufferZ(false);
-		
+
 			mText->Render(devCon);
-			mBitmap->Render(devCon,0.0f,0.0f);
-			mTextureShader->Render(devCon,mBitmap->GetIndexCount(), mBitmap->getTexture());
+			mBitmap->Render(devCon, 0.0f, 0.0f);
+			ID3D11ShaderResourceView * tex[] = { mBitmap->getTexture(), mTex->getTexture(), mMask->getTexture() };
+			mMultiTexShader->Render(devCon,mBitmap->GetIndexCount(), tex);
 			
 			mDevice->SetBufferZ(true);
 			std::string wyjscie = "MouseX: ";
@@ -314,11 +318,13 @@ namespace Cobol {
 			BOTHMSG("Problem with creating GraphicClass::mBitmap")
 			return false;
 		}
-		if(!mBitmap->Init(mDevice->getDevice(),"data/Texture1.dds",L"",XMFLOAT2(screenH,screenW),XMFLOAT2(256,256)))
+		if(!mBitmap->Init(mDevice->getDevice(),"data/Brick.gif",L"",XMFLOAT2(screenH,screenW),XMFLOAT2(256,256)))
 		{
 			BOTHMSG("Problem with init GraphicClass::mBitmap")
 			return false;
 		}
+		
+		
 		
 		mLightShader = new LightShaderClass();
 		if(!mLightShader)
@@ -330,6 +336,41 @@ namespace Cobol {
 		{
 			BOTHMSG("Problem with init mLightShader")
 			return false;
+		}
+		mMultiTexShader = new MultiTexShaderClass();
+		if (!mMultiTexShader)
+		{
+			BOTHMSG("Problem with creating GraphicClass::mMultiTexShader")
+			return false;
+		}
+		if (!mMultiTexShader->Init(mDevice->getDevice(), hwnd))
+		{
+			BOTHMSG("Problem with init mMultiTexShader")
+			return false;
+		}
+		mTex = new TextureClass();
+		if (!mTex)
+		{
+			BOTHMSG("Problem with creating GraphicClass::mTex")
+				return false;
+		}
+
+		if (!mTex->Init(mDevice->getDevice(), "data/Grass.gif"))
+		{
+			BOTHMSG("Problem with init GraphicClass::mTex")
+			return false;
+		}
+		mMask = new TextureClass();
+		if (!mMask)
+		{
+			BOTHMSG("Problem with creating GraphicClass::mMask")
+				return false;
+		}
+
+		if (!mMask->Init(mDevice->getDevice(), "data/alpha.gif"))
+		{
+			BOTHMSG("Problem with init GraphicClass::mMask")
+				return false;
 		}
 		mText = new TextClass();
 		if(!mText->Initialize(mDevice->getDevice(), mDevice->getContext(), hwnd, screenH, screenW))
@@ -362,6 +403,8 @@ namespace Cobol {
 	}
 	int GraphicClass::Clean()
 	{
+		//ReportLiveObjects();
+		
 		if(mBitmap)
 		{
 			delete mBitmap;
@@ -385,6 +428,18 @@ namespace Cobol {
 			delete mLightShader;
 			mLightShader = 0;
 		}
+		delete mFrustum;
+		mFrustum = 0;
+
+		delete mModelList;
+		mModelList = 0;
+
+		delete mMultiTexShader;
+		mMultiTexShader = 0;
+		delete mTex;
+		mTex = 0;
+		delete mMask;
+		mMask = 0;
 		if(mFrameCB) {
 			mFrameCB->Release();
 			mFrameCB=0;
@@ -414,12 +469,8 @@ namespace Cobol {
 			delete mDevice;
 			mDevice = 0;
 		}
-		delete mFrustum;
-		mFrustum = 0;
-
-		delete mModelList;
-		mModelList = 0;
-
+		
+	
 		return true;
 	}
 	GraphicClass::~GraphicClass() {

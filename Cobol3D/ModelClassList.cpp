@@ -5,6 +5,7 @@
 namespace Cobol {
 	ModelListClass::ModelListClass() {
 		mModelCount = 0;
+		mModelInfoList = nullptr;
 	}
 	ModelListClass::~ModelListClass() {
 		Shutdown();
@@ -18,6 +19,7 @@ namespace Cobol {
 	{
 		float red, blue, green;
 		mModelCount = num;
+		delete[] mModelInfoList;
 		mModelInfoList = new ModelInfoType[num];
 		if (!mModelInfoList)
 			return false;

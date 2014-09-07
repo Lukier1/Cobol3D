@@ -6,12 +6,13 @@
 #include<d3dx11.h>
 #include<DxErr.h>
 #include <xnamath.h>
+#include <string>
 #pragma warning ( default : 4005 )
 namespace Cobol {
 	class TextureClass {
 	private:
 		ID3D11ShaderResourceView* mTexture;
-
+		std::string mFilename;
 	public:
 		TextureClass();
 		TextureClass(const TextureClass&);
