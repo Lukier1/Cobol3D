@@ -19,12 +19,24 @@ namespace Cobol {
 			XMFLOAT3 position;
 			XMFLOAT2 texture;
 			XMFLOAT3 normal;
+			XMFLOAT3 tangent;
+			XMFLOAT3 binormal;
 		};
 
 		struct ModelType {
 			float x,y,z;
 			float tu, tv;
 			float nx, ny, nz;
+			float tx, ty, tz;
+			float bx, by, bz;
+		};
+		struct TempVertexType {
+			float x, y, z;
+			float tu, tv;
+			float nx, ny, nz;
+		};
+		struct VectorType {
+			float x, y, z;
 		};
 
 	public:
@@ -49,6 +61,9 @@ namespace Cobol {
 		bool LoadModel(WCHAR*);
 		void ReleaseModel();
 
+		void CalculateModelVectors();
+		void CalculateTangentBinormal(TempVertexType, TempVertexType, TempVertexType, XMFLOAT3&, XMFLOAT3&);
+		void CalculateNormal(XMFLOAT3, XMFLOAT3, XMFLOAT3&);
 		ID3D11Buffer * mVertexBuffer, *mIndexBuffer;
 		int mVertexCount, mIndexCount;
 

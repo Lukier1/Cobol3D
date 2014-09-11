@@ -1,4 +1,4 @@
-Start logging: Sun Sep 07 18:37:35 2014
+Start logging: Thu Sep 11 12:19:40 2014
 Poprawne utworzenie bufora g³êbokoœci
 Poprawne utworzone klasy Device
-End logging: Sun Sep 07 18:37:40 2014
+End logging: Thu Sep 11 12:20:32 2014

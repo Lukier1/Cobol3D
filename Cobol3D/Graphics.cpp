@@ -97,7 +97,7 @@ namespace Cobol {
 
 
 			// Update the rotation variable each frame.
-			rotation += (float)XM_PI * 0.0008f;
+			//rotation += (float)XM_PI * 0.0008f;
 			if (rotation > 2 * XM_PI)
 			{
 				rotation -= 2 * XM_PI;
@@ -150,11 +150,12 @@ namespace Cobol {
 
 
 			devCon->VSSetConstantBuffers(4, 1, &mMaterCB);
-
+			
 			//############################################################# Poczatek Sceny
-			mDevice->BeginScene(0.0f, 0, 0.2f, 1.0f);
+			mDevice->BeginScene(0.5f, 0.5f, 0.5f, 1.0f);
 
 			int renderCount = 0;
+			ID3D11ShaderResourceView * tex[] = { mBitmap->getTexture(), mTex->getTexture(), mMask->getTexture()};
 			for (int i = 0, modelCount = mModelList->GetModelCount(); i <modelCount; ++i) {
 				// Render the model using the color shader.
 				XMFLOAT4 color;
@@ -174,9 +175,9 @@ namespace Cobol {
 
 					UpdateBuffer(mStatCB, 2, &data, sizeof(data));
 				}
-
+				
 				mModel2->Render(mDevice->getContext());
-				mLightShader->Render(mDevice->getContext(), mModel2->GetIndexCount(), mModel->getTexture(),
+				mBump->Render(mDevice->getContext(), mModel2->GetIndexCount(), tex,
 					mLight->GetDirection(), color, mLight->GettAmbientColor(), mLight->GetSpecularColor(), mLight->GetSpecularPower());
 				worldMatrix = mScale * mSpin * mTranslate *mOrbit;
 				TransposeMatrix(worldMatrix);
@@ -209,9 +210,9 @@ namespace Cobol {
 			mDevice->SetBufferZ(false);
 
 			mText->Render(devCon);
-			mBitmap->Render(devCon, 0.0f, 0.0f);
-			ID3D11ShaderResourceView * tex[] = { mBitmap->getTexture(), mTex->getTexture(), mMask->getTexture() };
-			mMultiTexShader->Render(devCon,mBitmap->GetIndexCount(), tex);
+			//mBitmap->Render(devCon, 0.0f, 0.0f);
+		
+			//mMultiTexShader->Render(devCon,mBitmap->GetIndexCount(), tex);
 			
 			mDevice->SetBufferZ(true);
 			std::string wyjscie = "MouseX: ";
@@ -296,7 +297,7 @@ namespace Cobol {
 			BOTHMSG("Problem with creating GraphicClass::mModel")
 			return false;
 		}
-		if(!mModel2->Init(mDevice->getDevice(),"data/Texture1.dds",L"data/import2.cobM"))
+		if(!mModel2->Init(mDevice->getDevice(),"data/Brick.gif",L"data/import.cobM"))
 		{
 			BOTHMSG("Problem with init mModel")
 			return false;
@@ -318,7 +319,7 @@ namespace Cobol {
 			BOTHMSG("Problem with creating GraphicClass::mBitmap")
 			return false;
 		}
-		if(!mBitmap->Init(mDevice->getDevice(),"data/Brick.gif",L"",XMFLOAT2(screenH,screenW),XMFLOAT2(256,256)))
+		if(!mBitmap->Init(mDevice->getDevice(),"data/glassC.gif",L"",XMFLOAT2(screenH,screenW),XMFLOAT2(256,256)))
 		{
 			BOTHMSG("Problem with init GraphicClass::mBitmap")
 			return false;
@@ -348,6 +349,18 @@ namespace Cobol {
 			BOTHMSG("Problem with init mMultiTexShader")
 			return false;
 		}
+		mBump = new BumpMapShaderClass();
+		if (!mBump)
+		{
+			BOTHMSG("Problem with creating mBump");
+			return false;
+		}
+		if (!mBump->Init(mDevice->getDevice(), hwnd))
+		{
+
+			BOTHMSG("Problem with init mBump")
+			return false;
+		}
 		mTex = new TextureClass();
 		if (!mTex)
 		{
@@ -355,7 +368,7 @@ namespace Cobol {
 				return false;
 		}
 
-		if (!mTex->Init(mDevice->getDevice(), "data/Grass.gif"))
+		if (!mTex->Init(mDevice->getDevice(), "data/glassB.gif"))
 		{
 			BOTHMSG("Problem with init GraphicClass::mTex")
 			return false;
@@ -367,7 +380,7 @@ namespace Cobol {
 				return false;
 		}
 
-		if (!mMask->Init(mDevice->getDevice(), "data/alpha.gif"))
+		if (!mMask->Init(mDevice->getDevice(), "data/glassS.gif"))
 		{
 			BOTHMSG("Problem with init GraphicClass::mMask")
 				return false;
@@ -404,7 +417,11 @@ namespace Cobol {
 	int GraphicClass::Clean()
 	{
 		//ReportLiveObjects();
-		
+		if (mBump)
+		{
+			delete mBump;
+			mBump = 0;
+		}
 		if(mBitmap)
 		{
 			delete mBitmap;

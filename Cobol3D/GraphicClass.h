@@ -22,6 +22,7 @@
 #include "ModelListClass.h"
 #include "FrustumClass.h"
 #include "MulitTexShaderClass.h"
+#include "BumpMapShaderClass.h"
 
 namespace Cobol {
 	struct InputData {
@@ -66,7 +67,7 @@ namespace Cobol {
 		LightClass * mLight;
 		TextureClass * mTex,* mMask;
 		BitmapClass * mBitmap;
-		
+		BumpMapShaderClass * mBump;
 		void PrepareBuffers();
 		int InitBuffer();
 		const clock_t beginTime;
